@@ -27,6 +27,12 @@ from app.schemas import (
 )
 from app.services.file_service import save_upload_file
 from app.services.document_registry import document_registry
+from app.services.ollama_model_service import (
+    OllamaModelCapabilityError,
+    assert_ollama_model_supports_adk_tools,
+    build_tool_support_error,
+    is_ollama_tool_support_error,
+)
 
 # ── ADK imports ──────────────────────────────────────────────
 from app.adk_runtime.orchestrator import orchestrator
@@ -84,6 +90,14 @@ async def lifespan(app: FastAPI):
         resp.raise_for_status()
         models = [m["name"] for m in resp.json().get("models", [])]
         logger.info("Ollama is reachable. Available models: %s", models)
+        try:
+            assert_ollama_model_supports_adk_tools()
+            logger.info(
+                "Ollama chat model %s supports ADK tool/function calling.",
+                settings.ollama_chat_model,
+            )
+        except OllamaModelCapabilityError as model_exc:
+            logger.warning("%s", model_exc)
     except Exception as exc:
         logger.warning(
             "Ollama is NOT reachable at %s — %s. "
@@ -120,6 +134,18 @@ app.add_middleware(
 async def _run_agent(user_id: str, message: str) -> dict:
     """Send a message through the ADK orchestrator and collect the final response."""
 
+    try:
+        assert_ollama_model_supports_adk_tools()
+    except OllamaModelCapabilityError as exc:
+        logger.warning("ADK tool-capability validation failed for user=%s: %s", user_id, exc)
+        raise HTTPException(status_code=424, detail=str(exc))
+    except http_requests.RequestException as exc:
+        logger.exception("Ollama model capability check failed for user=%s", user_id)
+        raise HTTPException(
+            status_code=503,
+            detail=f"Unable to validate Ollama chat model '{settings.ollama_chat_model}': {exc}",
+        )
+
     # Step 1: Create session FIRST (required by InMemoryRunner)
     session = await runner.session_service.create_session(
         app_name="docqa_assistant",
@@ -145,6 +171,15 @@ async def _run_agent(user_id: str, message: str) -> dict:
                     if hasattr(part, "text") and part.text:
                         final_answer = part.text
     except Exception as exc:
+        if is_ollama_tool_support_error(exc):
+            detail = build_tool_support_error(settings.ollama_chat_model)
+            logger.warning(
+                "Ollama rejected ADK tool/function calling for model %s: %s",
+                settings.ollama_chat_model,
+                detail,
+            )
+            raise HTTPException(status_code=424, detail=detail)
+
         logger.exception("ADK runner error for user=%s", user_id)
         raise HTTPException(status_code=500, detail=f"Agent execution failed: {exc}")
 

@@ -126,6 +126,18 @@ curl "http://localhost:8001/documents/list?user_id=user_123"
 
 ## Troubleshooting
 
+### Ollama model does not support ADK tools
+
+The Google ADK orchestrator and agents in this project use function/tool calling. If `/chat/query` returns a message like `Configured Ollama chat model 'orca-mini:3b' does not support tool/function calling`, switch `OLLAMA_CHAT_MODEL` to an Ollama chat model that supports tools. For example:
+
+```bash
+ollama pull llama3.1
+# .env
+OLLAMA_CHAT_MODEL=llama3.1
+```
+
+`orca-mini:3b` can be useful for plain chat, but it does not support the ADK tool declarations required by this design. After changing `.env`, restart `uvicorn` so the ADK agents are rebuilt with the compatible model.
+
 ### Chroma embedding dimension mismatch
 
 If an upload fails with an error like `Collection expecting embedding with dimension of 768, got 384`, your existing Chroma collection was created with a different Ollama embedding model than the one currently configured. By default, the app now scopes Chroma collections by embedding model (for example, `document_chunks_nomic-embed-text`) so switching models does not reuse an incompatible collection. Keep `OLLAMA_EMBEDDING_MODEL=nomic-embed-text` for the default 768-dimensional setup, or set `CHROMA_COLLECTION_NAME` to a new collection name before indexing with another embedding model such as `all-minilm`.
