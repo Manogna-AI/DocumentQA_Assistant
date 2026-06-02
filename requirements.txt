@@ -1,0 +1,32 @@
+# ══════════════════════════════════════════════════════════════
+# requirements.txt — google-docqa-assistant
+# Generated: 2026-05-27 | Python 3.12 | Windows
+# Install: uv pip install -r requirements.txt
+# ══════════════════════════════════════════════════════════════
+
+# ── Core Framework ───────────────────────────────────────────
+fastapi==0.136.3
+uvicorn[standard]==0.48.0
+pydantic==2.13.4
+pydantic-settings==2.14.1
+python-multipart==0.0.29
+
+# ── HTTP Client ──────────────────────────────────────────────
+requests==2.34.2
+
+# ── Google ADK (Agent Development Kit) ───────────────────────
+google-adk==2.1.0
+
+# ── LiteLLM (LLM Gateway — connects ADK to Ollama) ──────────
+litellm==1.86.1
+
+# ── Vector Store (Embeddings + Retrieval) ────────────────────
+chromadb==1.5.9
+
+# ── Document Extraction ──────────────────────────────────────
+PyMuPDF==1.27.2.3
+python-docx==1.2.0
+python-pptx==1.0.2
+
+# ── Tokenisation ─────────────────────────────────────────────
+tiktoken==0.13.0
