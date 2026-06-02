@@ -243,6 +243,11 @@ async def upload_document(
             message=f"Successfully indexed {len(chunks)} chunks from {saved['file_name']}.",
         )
 
+    except ValueError as exc:
+        logger.exception("Ingestion validation failed for %s", saved["file_name"])
+        detail = str(exc)
+        status_code = 409 if "Embedding dimension mismatch" in detail else 400
+        raise HTTPException(status_code=status_code, detail=detail)
     except Exception as exc:
         logger.exception("Ingestion failed for %s", saved["file_name"])
         raise HTTPException(status_code=500, detail=f"Ingestion failed: {exc}")

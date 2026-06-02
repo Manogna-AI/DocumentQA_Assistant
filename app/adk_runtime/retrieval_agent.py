@@ -92,7 +92,6 @@ def retrieve_chunks(
     logger.info(f"Retrieved {len(filtered)} chunks before limiting")
 
     # NEW: ✓ Hard limit — prevents LLM overload / crash (using config)
-    from app.config import settings
     filtered = filtered[:settings.qa_max_chunk_count]
 
     # NEW: Log after limiting

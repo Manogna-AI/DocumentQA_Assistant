@@ -5,20 +5,77 @@ Includes document deletion support.
 """
 
 import uuid
+import hashlib
 import logging
+import re
 import chromadb
 
 from app.config import settings
 
 logger = logging.getLogger(__name__)
 
+_DIMENSION_ERROR_PATTERN = re.compile(
+    r"expecting embedding with dimension of (?P<expected>\d+), got (?P<received>\d+)",
+    re.IGNORECASE,
+)
+_COLLECTION_NAME_PATTERN = re.compile(r"[^a-zA-Z0-9._-]+")
+_MAX_COLLECTION_NAME_LENGTH = 63
+
+
+def _sanitize_collection_part(value: str) -> str:
+    normalized = _COLLECTION_NAME_PATTERN.sub("_", value.lower()).strip("._-")
+    return normalized or "collection"
+
+
+def _collection_name_for_model(base_name: str, embedding_model: str) -> str:
+    """Build a Chroma-safe collection name scoped to the embedding model."""
+    if not settings.chroma_scope_by_embedding_model:
+        return _sanitize_collection_part(base_name)
+
+    raw_name = (
+        f"{_sanitize_collection_part(base_name)}_"
+        f"{_sanitize_collection_part(embedding_model)}"
+    )
+    if len(raw_name) <= _MAX_COLLECTION_NAME_LENGTH:
+        return raw_name
+
+    digest = hashlib.sha1(raw_name.encode("utf-8")).hexdigest()[:8]
+    keep = _MAX_COLLECTION_NAME_LENGTH - len(digest) - 1
+    return f"{raw_name[:keep].rstrip('._-')}_{digest}"
+
+
+def _dimension_error_message(exc: Exception, collection_name: str) -> str | None:
+    """Return a user-actionable message for Chroma embedding dimension errors."""
+    match = _DIMENSION_ERROR_PATTERN.search(str(exc))
+    if not match:
+        return None
+
+    expected = match.group("expected")
+    received = match.group("received")
+    return (
+        f"Embedding dimension mismatch for Chroma collection '{collection_name}': "
+        f"the collection was created with {expected}-dimension embeddings, but "
+        f"the configured Ollama embedding model '{settings.ollama_embedding_model}' "
+        f"returned {received}-dimension embeddings. Use the same "
+        "OLLAMA_EMBEDDING_MODEL that created the collection, or set "
+        "CHROMA_COLLECTION_NAME to a new collection before indexing with a "
+        "different embedding model."
+    )
+
 
 class ChromaVectorStore:
     def __init__(self):
+        self.collection_name = _collection_name_for_model(
+            settings.chroma_collection_name,
+            settings.ollama_embedding_model,
+        )
         self.client = chromadb.PersistentClient(path=settings.chroma_dir)
         self.collection = self.client.get_or_create_collection(
-            name=settings.chroma_collection_name,
-            metadata={"hnsw:space": "cosine"},  # Cosine distance
+            name=self.collection_name,
+            metadata={
+                "hnsw:space": "cosine",
+                "embedding_model": settings.ollama_embedding_model,
+            },
         )
         self._expected_embedding_dim: int | None = None  # Track expected dimension
 
@@ -101,12 +158,19 @@ class ChromaVectorStore:
             })
         
         if ids:
-            self.collection.add(
-                ids=ids,
-                documents=docs,
-                embeddings=embeddings,
-                metadatas=metas,
-            )
+            try:
+                self.collection.add(
+                    ids=ids,
+                    documents=docs,
+                    embeddings=embeddings,
+                    metadatas=metas,
+                )
+            except Exception as exc:
+                dimension_message = _dimension_error_message(exc, self.collection_name)
+                if dimension_message:
+                    logger.error("[add_chunks] %s", dimension_message)
+                    raise ValueError(dimension_message) from exc
+                raise
             logger.info(
                 f"[add_chunks] Stored {len(ids)} chunks for document {document_id} "
                 f"(user={user_id}, embedding_dim={current_dim})"
@@ -125,12 +189,19 @@ class ChromaVectorStore:
                 {"document_id": filters["document_id"]},
             ]
         }
-        result = self.collection.query(
-            query_embeddings=[query_embedding],
-            n_results=top_k,
-            where=where,
-            include=["documents", "metadatas", "distances"],
-        )
+        try:
+            result = self.collection.query(
+                query_embeddings=[query_embedding],
+                n_results=top_k,
+                where=where,
+                include=["documents", "metadatas", "distances"],
+            )
+        except Exception as exc:
+            dimension_message = _dimension_error_message(exc, self.collection_name)
+            if dimension_message:
+                logger.error("[search] %s", dimension_message)
+                raise ValueError(dimension_message) from exc
+            raise
 
         output = []
         docs = result.get("documents", [[]])[0]
