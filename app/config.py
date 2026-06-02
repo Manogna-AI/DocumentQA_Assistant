@@ -19,8 +19,8 @@ class Settings(BaseSettings):
 
     # ── Ollama ────────────────────────────────────────────────
     ollama_base_url: str = "http://localhost:11434"
-    ollama_embedding_model: str = "all-minilm"
-    ollama_chat_model: str = "orca-mini:3b"
+    ollama_embedding_model: str = "nomic-embed-text"
+    ollama_chat_model: str = "llama3.1"
     ollama_embed_batch_size: int = 10
     ollama_request_timeout: int = 180
     ollama_max_retries: int = 3
@@ -37,6 +37,7 @@ class Settings(BaseSettings):
     # ── Vector store ─────────────────────────────────────────
     chroma_dir: str = "storage/chroma"
     chroma_collection_name: str = "document_chunks"
+    chroma_scope_by_embedding_model: bool = True
 
     # ── Retrieval ────────────────────────────────────────────
     top_k_initial: int = 3

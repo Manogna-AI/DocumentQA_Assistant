@@ -85,7 +85,9 @@ def ingest_document(
         }
     
     # ✓ VALIDATION 3: File is readable
-    if not file_path_obj.is_readable():
+    # pathlib.Path has no is_readable() method; use os.access() for the
+    # explicit readability check before opening/parsing the upload.
+    if not os.access(file_path_obj, os.R_OK):
         error_msg = f"File is not readable: {file_path}"
         logger.error(f"[ingest_document] {error_msg}")
         return {

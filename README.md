@@ -93,7 +93,7 @@ cp .env.example .env
 ### 4. Run FastAPI server
 
 ```bash
-uvicorn app.main:app --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload
 ```
 
 ### 5. Run with ADK Dev UI (optional)
@@ -105,7 +105,7 @@ adk web app/adk_runtime/
 ### 6. Upload a document
 
 ```bash
-curl -X POST "http://localhost:8000/documents/upload" \
+curl -X POST "http://localhost:8001/documents/upload" \
   -F "file=@sample.pdf" \
   -F "user_id=user_123"
 ```
@@ -113,7 +113,7 @@ curl -X POST "http://localhost:8000/documents/upload" \
 ### 7. Ask a question
 
 ```bash
-curl -X POST "http://localhost:8000/chat/query" \
+curl -X POST "http://localhost:8001/chat/query" \
   -H "Content-Type: application/json" \
   -d '{"user_id":"user_123","message":"What does the document say about renewal?"}'
 ```
@@ -121,8 +121,14 @@ curl -X POST "http://localhost:8000/chat/query" \
 ### 8. List documents
 
 ```bash
-curl "http://localhost:8000/documents/list?user_id=user_123"
+curl "http://localhost:8001/documents/list?user_id=user_123"
 ```
+
+## Troubleshooting
+
+### Chroma embedding dimension mismatch
+
+If an upload fails with an error like `Collection expecting embedding with dimension of 768, got 384`, your existing Chroma collection was created with a different Ollama embedding model than the one currently configured. By default, the app now scopes Chroma collections by embedding model (for example, `document_chunks_nomic-embed-text`) so switching models does not reuse an incompatible collection. Keep `OLLAMA_EMBEDDING_MODEL=nomic-embed-text` for the default 768-dimensional setup, or set `CHROMA_COLLECTION_NAME` to a new collection name before indexing with another embedding model such as `all-minilm`.
 
 ---
 

@@ -10,6 +10,7 @@ uvicorn[standard]==0.48.0
 pydantic==2.13.4
 pydantic-settings==2.14.1
 python-multipart==0.0.29
+python-dotenv==1.2.1
 
 # ── HTTP Client ──────────────────────────────────────────────
 requests==2.34.2
