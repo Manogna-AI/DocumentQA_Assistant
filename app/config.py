@@ -19,8 +19,9 @@ class Settings(BaseSettings):
 
     # ── Ollama ────────────────────────────────────────────────
     ollama_base_url: str = "http://localhost:11434"
-    ollama_embedding_model: str = "nomic-embed-text"
-    ollama_chat_model: str = "llama3.1"
+    ollama_embedding_model: str = "all-minilm"
+    ollama_chat_model: str = "gemini-2.5-flash"
+    #ollama_chat_model: str = "qwen3:1.7b"
     ollama_embed_batch_size: int = 10
     ollama_request_timeout: int = 180
     ollama_max_retries: int = 3
