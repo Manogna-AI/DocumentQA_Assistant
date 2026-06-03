@@ -9,6 +9,7 @@ const ALLOWED_TYPES = [
   'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
   'application/vnd.openxmlformats-officedocument.presentationml.presentation',
 ];
+const ALLOWED_EXTENSIONS = ['pdf', 'docx', 'pptx'];
 const MAX_SIZE = 50 * 1024 * 1024; // 50 MB
 
 export default function Header() {
@@ -19,7 +20,10 @@ export default function Header() {
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    const extension = file.name.split('.').pop()?.toLowerCase() ?? '';
+    const hasAllowedMimeType = ALLOWED_TYPES.includes(file.type);
+    const hasAllowedExtension = ALLOWED_EXTENSIONS.includes(extension);
+    if (!hasAllowedMimeType && !hasAllowedExtension) {
       toast.error('Unsupported file type. Allowed: PDF, DOCX, PPTX');
       return;
     }
@@ -69,7 +73,13 @@ export default function Header() {
           <FileUp size={17} />
           {upload.isPending ? 'Uploading...' : 'Upload document'}
         </button>
-        <input ref={fileRef} type="file" className="hidden" accept=".pdf,.docx,.pptx" onChange={handleFile} />
+        <input
+          ref={fileRef}
+          type="file"
+          className="hidden"
+          accept=".pdf,.docx,.pptx"
+          onChange={handleFile}
+        />
 
         <button
           onClick={toggleTheme}

@@ -19,9 +19,9 @@ function extractErrorContext(err: any): ErrorContext {
   const isTimeoutError = err.code === 'ECONNABORTED' || err.code === 'ERR_NETWORK_TIMEOUT';
   const status = err.response?.status;
   const isServerError = status && status >= 500;
-  
+
   let message = 'Sorry, something went wrong. Please try again.';
-  
+
   // ✓ Differentiate error messages based on error type
   if (isTimeoutError) {
     message = 'The request took too long. Please try a shorter question.';
@@ -36,7 +36,7 @@ function extractErrorContext(err: any): ErrorContext {
   } else if (err.message) {
     message = err.message;
   }
-  
+
   return {
     code: err.code,
     status,
@@ -48,19 +48,12 @@ function extractErrorContext(err: any): ErrorContext {
 }
 
 export function useChat() {
-  const {
-    userId,
-    selectedDocumentId,
-    isQuerying,
-    addMessage,
-    updateLastMessage,
-    setCitations,
-    setIsQuerying,
-  } = useAppStore();
+  const { userId, selectedDocumentId, addMessage, updateLastMessage, setCitations, setIsQuerying } =
+    useAppStore();
 
   const send = useCallback(
     async (text: string) => {
-      if (!text.trim() || isQuerying) return;
+      if (!text.trim() || useAppStore.getState().isQuerying) return;
 
       const userMsg: Message = {
         id: crypto.randomUUID(),
@@ -91,16 +84,15 @@ export function useChat() {
         const citations = response.citations ?? [];
         updateLastMessage(response.answer || 'No answer returned.', citations);
         setCitations(citations);
-        
+
         console.debug('[useChat] Query successful', {
           messageLength: text.length,
           citationCount: citations.length,
           timestamp: new Date().toISOString(),
         });
-        
       } catch (err) {
         const errorCtx = extractErrorContext(err);
-        
+
         // ✓ Log structured error information
         console.error('[useChat] Query failed', {
           errorCode: errorCtx.code,
@@ -110,11 +102,11 @@ export function useChat() {
             isTimeoutError: errorCtx.isTimeoutError,
             isServerError: errorCtx.isServerError,
           },
-          userMessage: text.substring(0, LOG_MESSAGE_PREVIEW_CHARS),  // ✓ Use centralized config
+          userMessage: text.substring(0, LOG_MESSAGE_PREVIEW_CHARS), // ✓ Use centralized config
           selectedDocumentId,
           timestamp: new Date().toISOString(),
         });
-        
+
         // ✓ Show user-friendly error message
         setCitations([]);
         updateLastMessage(errorCtx.message, []);
@@ -122,7 +114,7 @@ export function useChat() {
         setIsQuerying(false);
       }
     },
-    [userId, selectedDocumentId, isQuerying, addMessage, updateLastMessage, setCitations, setIsQuerying],
+    [userId, selectedDocumentId, addMessage, updateLastMessage, setCitations, setIsQuerying],
   );
 
   return { send };
