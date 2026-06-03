@@ -9,7 +9,9 @@ export default function ChatInput() {
   const { send } = useChat();
   const ref = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => { ref.current?.focus(); }, []);
+  useEffect(() => {
+    ref.current?.focus();
+  }, []);
 
   const handleSend = () => {
     if (!text.trim() || isQuerying) return;
@@ -26,7 +28,7 @@ export default function ChatInput() {
   };
 
   return (
-    <div className="border-t border-slate-200/80 bg-white/80 p-4 backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/70">
+    <div className="shrink-0 border-t border-slate-200/80 bg-white/80 p-4 backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/70">
       <div className="mx-auto max-w-4xl rounded-3xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-200/60 transition focus-within:border-blue-300 focus-within:ring-4 focus-within:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20 dark:focus-within:border-blue-700">
         <div className="flex items-end gap-2">
           <textarea

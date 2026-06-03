@@ -10,7 +10,7 @@ export default function MessageBubble({ message }: { message: Message }) {
   const isUser = message.role === 'user';
 
   return (
-    <div className={clsx('flex gap-3', isUser ? 'justify-end' : 'justify-start')}>
+    <div className={clsx('flex min-w-0 gap-3', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
         <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-800 to-blue-700 text-white shadow-lg shadow-blue-900/15 dark:from-blue-600 dark:to-cyan-600">
           <Bot size={17} />
@@ -18,7 +18,7 @@ export default function MessageBubble({ message }: { message: Message }) {
       )}
       <div
         className={clsx(
-          'max-w-[82%] rounded-[1.35rem] px-4 py-3 text-sm leading-relaxed shadow-sm sm:max-w-[78%]',
+          'min-w-0 max-w-[82%] overflow-hidden rounded-[1.35rem] px-4 py-3 text-sm leading-relaxed shadow-sm sm:max-w-[78%]',
           isUser
             ? 'rounded-br-md bg-gradient-to-br from-blue-600 to-cyan-600 text-white shadow-blue-600/20'
             : 'rounded-bl-md border border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200',

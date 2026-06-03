@@ -8,7 +8,6 @@ Run:
   uvicorn app.main:app --host 0.0.0.0 --port 8001 --reload --log-level debug
 """
 
-import uuid
 import os
 import json
 import logging
@@ -18,6 +17,10 @@ from datetime import datetime, timezone
 import requests as http_requests
 from fastapi import FastAPI, UploadFile, File, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from app.config import settings
 from app.schemas import (
@@ -50,23 +53,15 @@ from app.adk_runtime.retrieval_agent import retrieve_chunks
 from app.adk_runtime.answering_agent import generate_answer
 from google.adk.runners import InMemoryRunner
 from google.genai import types
-from app.config import settings
 import litellm
 
-os.environ["OLLAMA_API_BASE"] = "http://localhost:11434"
-
-# Pass API key to LiteLLM for Ollama Cloud
-os.environ["OLLAMA_API_KEY"] = settings.ollama_api_key
+os.environ["OLLAMA_API_BASE"] = settings.ollama_base_url
 
 # Tell LiteLLM where Ollama is
 litellm.api_base = settings.ollama_base_url
 
 # ── Pass Ollama API key to LiteLLM ──
 os.environ["OLLAMA_API_KEY"] = settings.ollama_api_key
-print(f"DEBUG: OLLAMA_API_KEY = '{settings.ollama_api_key[:5]}...'")
-
-from dotenv import load_dotenv
-load_dotenv()
 
 # ── Logging ──────────────────────────────────────────────────
 logging.basicConfig(
