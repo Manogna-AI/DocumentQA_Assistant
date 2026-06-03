@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     ollama_chat_model: str = "gemini-2.5-flash"
     #ollama_chat_model: str = "qwen3:1.7b"
     ollama_embed_batch_size: int = 10
-    ollama_request_timeout: int = 180
+    ollama_request_timeout: int = 600
     ollama_max_retries: int = 3
     ollama_startup_check_timeout: int = 5  # Check if Ollama is running at startup
     ollama_health_check_timeout: int = 3   # Quick health check timeout

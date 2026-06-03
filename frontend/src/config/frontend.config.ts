@@ -5,8 +5,8 @@
 
 export const FRONTEND_CONFIG = {
   // ── HTTP Timeouts (milliseconds) ──────────────────────────────────
-  /** API request timeout (2 minutes for LLM responses) */
-  API_TIMEOUT_MS: 120_000,
+  /** API request timeout (10 minutes for slower local Ollama LLM responses) */
+  API_TIMEOUT_MS: 600_000,
 
   /** Upload request timeout (5 minutes for large files) */
   UPLOAD_TIMEOUT_MS: 300_000,

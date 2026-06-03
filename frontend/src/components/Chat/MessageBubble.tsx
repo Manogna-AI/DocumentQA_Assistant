@@ -1,6 +1,6 @@
 import ReactMarkdown from 'react-markdown';
 import { clsx } from 'clsx';
-import { User, Bot } from 'lucide-react';
+import { User, Bot, Sparkles } from 'lucide-react';
 import type { Message } from '@/types/chat';
 import { useAppStore } from '@/stores/appStore';
 import LoadingDots from './LoadingDots';
@@ -12,32 +12,36 @@ export default function MessageBubble({ message }: { message: Message }) {
   return (
     <div className={clsx('flex gap-3', isUser ? 'justify-end' : 'justify-start')}>
       {!isUser && (
-        <div className="w-7 h-7 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center shrink-0 mt-0.5">
-          <Bot size={15} />
+        <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-800 to-blue-700 text-white shadow-lg shadow-blue-900/15 dark:from-blue-600 dark:to-cyan-600">
+          <Bot size={17} />
         </div>
       )}
       <div
         className={clsx(
-          'max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
+          'max-w-[82%] rounded-[1.35rem] px-4 py-3 text-sm leading-relaxed shadow-sm sm:max-w-[78%]',
           isUser
-            ? 'bg-blue-600 text-white rounded-br-md'
-            : 'bg-gray-100 dark:bg-gray-800 rounded-bl-md',
+            ? 'rounded-br-md bg-gradient-to-br from-blue-600 to-cyan-600 text-white shadow-blue-600/20'
+            : 'rounded-bl-md border border-slate-200 bg-white text-slate-700 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-200',
         )}
       >
         {message.isLoading ? (
-          <LoadingDots />
+          <div className="flex items-center gap-2 text-slate-500 dark:text-slate-300">
+            <Sparkles size={15} className="text-blue-500" />
+            <span className="text-xs font-semibold">Ollama is analyzing your documents</span>
+            <LoadingDots />
+          </div>
         ) : isUser ? (
-          <p>{message.content}</p>
+          <p className="whitespace-pre-wrap">{message.content}</p>
         ) : (
           <div className="prose-chat">
             <ReactMarkdown>{message.content}</ReactMarkdown>
             {message.citations && message.citations.length > 0 && (
-              <div className="flex gap-1 mt-2 flex-wrap">
+              <div className="mt-3 flex flex-wrap gap-1.5 border-t border-slate-200 pt-3 dark:border-slate-800">
                 {message.citations.map((c, i) => (
                   <button
                     key={c.chunk_id}
                     onClick={() => setCitations(message.citations!)}
-                    className="text-[10px] px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 hover:bg-blue-200 dark:hover:bg-blue-800 transition-colors"
+                    className="rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-bold text-blue-700 ring-1 ring-blue-200 transition hover:bg-blue-100 dark:bg-blue-950/50 dark:text-blue-300 dark:ring-blue-900 dark:hover:bg-blue-900/60"
                   >
                     [{i + 1}] p.{c.page_number ?? '?'}
                   </button>
@@ -48,8 +52,8 @@ export default function MessageBubble({ message }: { message: Message }) {
         )}
       </div>
       {isUser && (
-        <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shrink-0 mt-0.5">
-          <User size={15} className="text-white" />
+        <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl bg-slate-900 text-white shadow-lg shadow-slate-900/15 dark:bg-slate-700">
+          <User size={17} />
         </div>
       )}
     </div>
