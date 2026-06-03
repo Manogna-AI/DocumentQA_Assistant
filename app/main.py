@@ -9,6 +9,7 @@ Run:
 """
 
 import uuid
+import os
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -33,6 +34,14 @@ from app.services.ollama_model_service import (
     build_tool_support_error,
     is_ollama_tool_support_error,
 )
+
+# ── Ollama/LiteLLM runtime timeout guard ─────────────────────
+# Google ADK routes agent model calls through LiteLLM. These environment
+# defaults keep slow local Ollama models from being cancelled prematurely while
+# preserving quick startup and health checks via the dedicated settings above.
+os.environ.setdefault("OLLAMA_REQUEST_TIMEOUT", str(settings.ollama_request_timeout))
+os.environ.setdefault("LITELLM_REQUEST_TIMEOUT", str(settings.ollama_request_timeout))
+os.environ.setdefault("LITELLM_TIMEOUT", str(settings.ollama_request_timeout))
 
 # ── ADK imports ──────────────────────────────────────────────
 from app.adk_runtime.orchestrator import orchestrator

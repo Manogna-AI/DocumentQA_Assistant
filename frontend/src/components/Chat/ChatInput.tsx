@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { SendHorizonal } from 'lucide-react';
+import { SendHorizonal, Timer } from 'lucide-react';
 import { useAppStore } from '@/stores/appStore';
 import { useChat } from '@/hooks/useChat';
 
@@ -26,28 +26,35 @@ export default function ChatInput() {
   };
 
   return (
-    <div className="border-t border-gray-200 dark:border-gray-800 p-3">
-      <div className="flex items-end gap-2 bg-gray-100 dark:bg-gray-800 rounded-xl px-3 py-2">
-        <textarea
-          ref={ref}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Ask about your document..."
-          rows={1}
-          className="flex-1 bg-transparent resize-none outline-none text-sm placeholder:text-gray-400 max-h-32"
-        />
-        <button
-          onClick={handleSend}
-          disabled={!text.trim() || isQuerying}
-          className="p-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-        >
-          <SendHorizonal size={16} />
-        </button>
+    <div className="border-t border-slate-200/80 bg-white/80 p-4 backdrop-blur dark:border-slate-800/80 dark:bg-slate-950/70">
+      <div className="mx-auto max-w-4xl rounded-3xl border border-slate-200 bg-white p-2 shadow-xl shadow-slate-200/60 transition focus-within:border-blue-300 focus-within:ring-4 focus-within:ring-blue-500/10 dark:border-slate-800 dark:bg-slate-900 dark:shadow-black/20 dark:focus-within:border-blue-700">
+        <div className="flex items-end gap-2">
+          <textarea
+            ref={ref}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask a question, request a summary, or compare document sections..."
+            rows={1}
+            className="max-h-36 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm text-slate-800 outline-none placeholder:text-slate-400 dark:text-slate-100"
+          />
+          <button
+            onClick={handleSend}
+            disabled={!text.trim() || isQuerying}
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-blue-600 text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-40"
+            title="Send message"
+          >
+            <SendHorizonal size={18} />
+          </button>
+        </div>
       </div>
-      <p className="text-[10px] text-gray-400 mt-1.5 text-center">
-        Answers are generated from uploaded documents only. Press Enter to send, Shift+Enter for new line.
-      </p>
+      <div className="mx-auto mt-2 flex max-w-4xl flex-wrap items-center justify-center gap-x-3 gap-y-1 text-[11px] text-slate-400">
+        <span>Answers are generated from uploaded documents only.</span>
+        <span className="inline-flex items-center gap-1">
+          <Timer size={12} /> Extended Ollama timeout enabled for slower local models.
+        </span>
+        <span>Enter to send · Shift+Enter for a new line</span>
+      </div>
     </div>
   );
 }
