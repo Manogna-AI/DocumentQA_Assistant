@@ -88,12 +88,13 @@ export function useChat() {
           document_id: selectedDocumentId || undefined,
         });
 
-        updateLastMessage(response.answer, response.citations);
-        setCitations(response.citations);
+        const citations = response.citations ?? [];
+        updateLastMessage(response.answer || 'No answer returned.', citations);
+        setCitations(citations);
         
         console.debug('[useChat] Query successful', {
           messageLength: text.length,
-          citationCount: response.citations.length,
+          citationCount: citations.length,
           timestamp: new Date().toISOString(),
         });
         
@@ -115,7 +116,8 @@ export function useChat() {
         });
         
         // ✓ Show user-friendly error message
-        updateLastMessage(errorCtx.message);
+        setCitations([]);
+        updateLastMessage(errorCtx.message, []);
       } finally {
         setIsQuerying(false);
       }

@@ -104,22 +104,27 @@ def generate_answer(
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {question}"},
     ])
+    if isinstance(answer, dict):
+        answer = answer.get("answer") or answer.get("content") or json.dumps(answer)
 
-    # Build citations list
-    citations = [
-        {
-            "chunk_id": chunk.get("chunk_id"),
-            "document_name": chunk.get("metadata", {}).get("document_name", ""),
-            "page_number": chunk.get("metadata", {}).get("page_number"),
-            "slide_number": chunk.get("metadata", {}).get("slide_number"),
-            "score": chunk.get("score"),
-        }
-        for chunk in used_chunks
-    ]
+    # Build citations list with the fields expected by the API and React UI.
+    citations = []
+    for chunk in used_chunks:
+        metadata = chunk.get("metadata", {})
+        citations.append({
+            "chunk_id": chunk.get("chunk_id") or metadata.get("chunk_id"),
+            "document_id": metadata.get("document_id", ""),
+            "document_name": metadata.get("document_name", ""),
+            "page_number": metadata.get("page_number"),
+            "slide_number": metadata.get("slide_number"),
+            "section_title": metadata.get("section_title") or None,
+            "snippet": chunk.get("text", "")[:settings.qa_max_chunk_chars],
+            "score": chunk.get("hybrid_score", chunk.get("score")),
+        })
 
     return {
         "status": "success",
-        "answer": answer,
+        "answer": str(answer),
         "citations": citations,
     }
 

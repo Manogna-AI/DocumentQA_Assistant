@@ -17,8 +17,8 @@ export interface QueryRequest {
 
 export interface QueryResponse {
   answer: string;
-  citations: Citation[];
-  metadata: {
+  citations?: Citation[];
+  metadata?: {
     status: string;
     intent: string;
     retrieved_count?: number;

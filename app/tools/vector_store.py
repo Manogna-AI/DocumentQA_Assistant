@@ -22,6 +22,20 @@ _COLLECTION_NAME_PATTERN = re.compile(r"[^a-zA-Z0-9._-]+")
 _MAX_COLLECTION_NAME_LENGTH = 63
 
 
+def _tokenize_keyword_query(text: str) -> set[str]:
+    """Return normalized keyword tokens suitable for lightweight lexical search."""
+    stop_words = {
+        "a", "an", "and", "are", "as", "at", "be", "by", "for", "from",
+        "how", "in", "is", "it", "of", "on", "or", "that", "the", "this",
+        "to", "was", "what", "when", "where", "which", "who", "why", "with",
+    }
+    return {
+        token
+        for token in re.findall(r"[a-zA-Z0-9][a-zA-Z0-9_-]{2,}", text.lower())
+        if token not in stop_words
+    }
+
+
 def _sanitize_collection_part(value: str) -> str:
     normalized = _COLLECTION_NAME_PATTERN.sub("_", value.lower()).strip("._-")
     return normalized or "collection"
@@ -230,6 +244,62 @@ class ChromaVectorStore:
                 "score": score,
             })
         return output
+
+    # ── Keyword Search ──────────────────────────────────────
+    def keyword_search(
+        self,
+        query: str,
+        top_k: int,
+        filters: dict,
+    ) -> list[dict]:
+        """Search chunks lexically using keyword overlap.
+
+        This complements vector similarity when embeddings miss exact names,
+        clauses, numbers, or domain terms in uploaded documents.
+        """
+        query_terms = _tokenize_keyword_query(query)
+        if not query_terms:
+            return []
+
+        where_terms = [{"user_id": filters["user_id"]}]
+        document_id = filters.get("document_id")
+        if document_id and document_id not in ("latest", "all"):
+            where_terms.append({"document_id": document_id})
+        where = {"$and": where_terms} if len(where_terms) > 1 else where_terms[0]
+
+        result = self.collection.get(
+            where=where,
+            include=["documents", "metadatas"],
+        )
+        docs = result.get("documents", [])
+        metas = result.get("metadatas", [])
+        ids = result.get("ids", [])
+
+        ranked = []
+        for doc, meta, chunk_id in zip(docs, metas, ids):
+            doc_terms = _tokenize_keyword_query(doc or "")
+            overlap = query_terms & doc_terms
+            if not overlap:
+                continue
+            # Blend exact overlap ratio with a small phrase bonus for stable ranking.
+            score = min(1.0, len(overlap) / max(len(query_terms), 1))
+            if query.lower() in (doc or "").lower():
+                score = min(1.0, score + 0.2)
+            ranked.append({
+                "chunk_id": meta.get("chunk_id", chunk_id),
+                "text": doc,
+                "metadata": {
+                    **meta,
+                    "page_number": None if meta.get("page_number") == -1 else meta.get("page_number"),
+                    "slide_number": None if meta.get("slide_number") == -1 else meta.get("slide_number"),
+                },
+                "score": score,
+                "keyword_score": score,
+                "retrieval_source": "keyword",
+            })
+
+        ranked.sort(key=lambda item: item["keyword_score"], reverse=True)
+        return ranked[:top_k]
 
     # ── Delete all chunks for a document ─────────────────────
     def delete_document(self, document_id: str):
