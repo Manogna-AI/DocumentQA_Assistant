@@ -47,6 +47,21 @@ os.environ.setdefault("LITELLM_TIMEOUT", str(settings.ollama_request_timeout))
 from app.adk_runtime.orchestrator import orchestrator
 from google.adk.runners import InMemoryRunner
 from google.genai import types
+from app.config import settings
+import litellm
+
+os.environ["OLLAMA_API_BASE"] = "http://localhost:11434"
+
+# Pass API key to LiteLLM for Ollama Cloud
+os.environ["OLLAMA_API_KEY"] = settings.ollama_api_key
+
+# Tell LiteLLM where Ollama is
+litellm.api_base = settings.ollama_base_url
+
+# ── Pass Ollama API key to LiteLLM ──
+os.environ["OLLAMA_API_KEY"] = settings.ollama_api_key
+print(f"DEBUG: OLLAMA_API_KEY = '{settings.ollama_api_key[:5]}...'")
+
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -172,13 +187,20 @@ async def _run_agent(user_id: str, message: str) -> dict:
     try:
         async for event in runner.run_async(
             user_id=user_id,
-            session_id=session.id,        # ← Use session.id, NOT uuid
+            session_id=session.id,
             new_message=content,
         ):
             if event.content and event.content.parts:
                 for part in event.content.parts:
                     if hasattr(part, "text") and part.text:
-                        final_answer = part.text
+                        text = part.text.strip()
+                        # DEBUG — log everything
+                        logger.info(
+                            "EVENT author=%s | text_preview=%s",
+                            getattr(event, "author", "unknown"),
+                            text[:150]
+                        )
+                        final_answer = text  # Keep updating final_answer until the end of the stream
     except Exception as exc:
         if is_ollama_tool_support_error(exc):
             detail = build_tool_support_error(settings.ollama_chat_model)

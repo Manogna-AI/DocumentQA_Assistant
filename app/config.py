@@ -17,11 +17,18 @@ class Settings(BaseSettings):
     max_file_size_mb: int = 50
     allowed_file_types: set[str] = {"pdf", "docx", "pptx"}
 
-    # ── Ollama ────────────────────────────────────────────────
-    ollama_base_url: str = "http://localhost:11434"
+    # ── Ollama local────────────────────────────────────────────────
+    ollama_embed_url: str = "http://localhost:11434"
     ollama_embedding_model: str = "all-minilm"
-    ollama_chat_model: str = "gemini-2.5-flash"
+    #ollama_chat_model: str = "gemini-2.5-flash"
     #ollama_chat_model: str = "qwen3:1.7b"
+
+    # ── Ollama Cloud───────────────────────────────────────────────────
+    ollama_api_key: str = ""
+    ollama_base_url: str = "https://ollama.com"
+    ollama_chat_model: str = "gpt-oss:120b"
+
+
     ollama_embed_batch_size: int = 10
     ollama_request_timeout: int = 600
     ollama_max_retries: int = 3

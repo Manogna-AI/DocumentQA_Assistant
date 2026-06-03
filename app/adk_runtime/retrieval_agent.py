@@ -12,7 +12,7 @@ from app.config import settings
 from google.adk.agents import Agent
 from app.tools.ollama_client import ollama_embed
 from app.tools.vector_store import vector_store
-
+from .answering_agent import answering_agent
 
 import logging
 logger = logging.getLogger(__name__)
@@ -148,7 +148,8 @@ retrieval_agent = Agent(
     description=(
         "Retrieval Agent — Embeds the user query using the same Ollama embedding "
         "model, performs top-K similarity search over indexed chunks in ChromaDB, "
-        "and returns relevant text snippets with page/slide metadata and scores."
+        "and returns relevant text snippets with page/slide metadata and scores. "
+        "After retrieval, automatically transfers to answering_agent."
     ),
     instruction=(
         "/no_think\n"
@@ -159,12 +160,17 @@ retrieval_agent = Agent(
         "2. Pass intent='summary' for summarization requests\n"
         "3. Pass intent='qa' for specific questions\n"
         "4. Return ALL retrieved chunks — the answering agent will use them\n\n"
-        "IMPORTANT: Your output will be automatically passed to the next agent "
-        "in the pipeline via session state."
-        "Do not modify the chunks"
+        "════════════════════════════════════════\n"
+        "AFTER RETRIEVAL — MANDATORY\n"
+        "════════════════════════════════════════\n\n"
+        "After retrieving chunks, you MUST transfer to answering_agent.\n"
+        "NEVER return raw chunks to the user directly.\n"
+        "ALWAYS transfer to answering_agent with the retrieved context.\n"
+        "Do not modify the chunks.\n"
     ),
     tools=[retrieve_chunks],
-    output_key="retrieved_chunks",       # ← SequentialAgent reads this
+    sub_agents=[answering_agent],        # ← ADD THIS
+    output_key="retrieved_chunks",
     disallow_transfer_to_parent=True,
     disallow_transfer_to_peers=True,
 )

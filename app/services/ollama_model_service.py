@@ -39,11 +39,31 @@ class OllamaModelCapabilityError(RuntimeError):
     """Raised when the configured Ollama chat model cannot run ADK tools."""
 
 
+#def _show_model(model: str) -> dict[str, Any]:
+#    """Return Ollama `/api/show` metadata for a model."""
+#    resp = requests.post(
+#        f"{settings.ollama_base_url}/api/show",
+#        json={"model": model},
+#        timeout=settings.ollama_health_check_timeout,
+#    )
+#    resp.raise_for_status()
+#    return resp.json()
+
+
 def _show_model(model: str) -> dict[str, Any]:
     """Return Ollama `/api/show` metadata for a model."""
+    # Cloud models don't have local metadata
+    if model.endswith("-cloud"):
+        return {"template": "tools supported"}
+    
+    headers = {}
+    if settings.ollama_api_key:
+        headers["Authorization"] = f"Bearer {settings.ollama_api_key}"
+
     resp = requests.post(
         f"{settings.ollama_base_url}/api/show",
-        json={"model": model},
+        json={"name": model},
+        headers=headers,
         timeout=settings.ollama_health_check_timeout,
     )
     resp.raise_for_status()

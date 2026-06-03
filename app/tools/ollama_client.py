@@ -64,7 +64,7 @@ def ollama_embed(texts: list[str]) -> list[list[float]]:
     """
     resp = _retry_request(
         "POST",
-        f"{settings.ollama_base_url}/api/embed",
+        f"{settings.ollama_embed_url}/api/embed",
         json={
             "model": settings.ollama_embedding_model,
             "input": texts,

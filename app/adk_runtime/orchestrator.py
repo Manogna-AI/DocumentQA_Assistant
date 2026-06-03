@@ -11,7 +11,7 @@ from app.config import settings
 from google.adk.agents import Agent
 from .ingestion_agent import ingestion_agent
 from .retrieval_agent import retrieval_agent
-from .answering_agent import answering_agent
+#from .answering_agent import answering_agent
 
 os.environ.setdefault("OLLAMA_API_BASE", settings.ollama_base_url)
 MODEL = f"ollama_chat/{settings.ollama_chat_model}"
@@ -216,9 +216,7 @@ orchestrator = Agent(
         "  → Transfer to ingestion_agent\n\n"
 
         "For 'qa' or 'summary' intent:\n"
-        "  → Transfer to retrieval_agent FIRST\n"
-        "  → After retrieval completes, transfer to answering_agent\n"
-        "  → CRITICAL: retrieval_agent MUST run before answering_agent\n\n"
+        "  → Transfer to retrieval_agent (it handles retrieval AND answering automatically)\n\n"
 
         "For 'doc_context' intent:\n"
         "  → Acknowledge, then transfer to retrieval_agent\n\n"
@@ -255,5 +253,5 @@ orchestrator = Agent(
         "6. Be friendly, concise, and helpful"
     ),
     tools=[classify_intents],
-    sub_agents=[ingestion_agent, retrieval_agent, answering_agent],
+    sub_agents=[ingestion_agent, retrieval_agent],
 )

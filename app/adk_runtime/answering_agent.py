@@ -136,7 +136,7 @@ answering_agent = Agent(
         "the document' if evidence is missing. Supports QA and SUMMARY intents."
     ),
     instruction=(
-        "/no_think\n"                                
+        "/no_think\n"
         "You are the Answering Agent.\n\n"
         "CONTEXT FROM RETRIEVAL AGENT:\n"
         "{retrieved_chunks?}\n\n"
@@ -151,6 +151,6 @@ answering_agent = Agent(
     ),
     tools=[generate_answer],
     output_key="answer_result",
-    disallow_transfer_to_parent=True,
     disallow_transfer_to_peers=True,
+    # disallow_transfer_to_parent REMOVED
 )
