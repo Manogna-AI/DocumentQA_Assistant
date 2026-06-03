@@ -10,6 +10,7 @@ Run:
 
 import uuid
 import os
+import json
 import logging
 from contextlib import asynccontextmanager
 from datetime import datetime, timezone
@@ -44,7 +45,9 @@ os.environ.setdefault("LITELLM_REQUEST_TIMEOUT", str(settings.ollama_request_tim
 os.environ.setdefault("LITELLM_TIMEOUT", str(settings.ollama_request_timeout))
 
 # ── ADK imports ──────────────────────────────────────────────
-from app.adk_runtime.orchestrator import orchestrator
+from app.adk_runtime.orchestrator import orchestrator, classify_intents
+from app.adk_runtime.retrieval_agent import retrieve_chunks
+from app.adk_runtime.answering_agent import generate_answer
 from google.adk.runners import InMemoryRunner
 from google.genai import types
 from app.config import settings
@@ -284,6 +287,13 @@ async def upload_document(
         from app.tools.ollama_client import ollama_embed
         from app.tools.vector_store import vector_store
 
+        document_id = document_registry.create_document(
+            user_id=user_id,
+            document_name=saved["file_name"],
+            file_type=saved["file_type"],
+            status="processing",
+        )
+
         text_units = extract_text(
             file_path=saved["file_path"],
             file_type=saved["file_type"],
@@ -294,16 +304,23 @@ async def upload_document(
         if chunks:
             embeddings = batch_embeddings([c["text"] for c in chunks])
             vector_store.add_chunks(
-                document_id=saved["file_name"],
+                document_id=document_id,
                 document_name=saved["file_name"],
                 user_id=user_id,
                 chunks=chunks,
                 embeddings=embeddings,
             )
 
+        document_registry.update_document(
+            document_id,
+            status="indexed",
+            chunk_count=len(chunks),
+        )
+
         return UploadResponse(
-            document_id=saved["file_name"],
+            document_id=document_id,
             document_name=saved["file_name"],
+            file_type=saved["file_type"],
             status="indexed",
             chunk_count=len(chunks),
             message=f"Successfully indexed {len(chunks)} chunks from {saved['file_name']}.",
@@ -312,28 +329,67 @@ async def upload_document(
     except ValueError as exc:
         logger.exception("Ingestion validation failed for %s", saved["file_name"])
         detail = str(exc)
+        if "document_id" in locals():
+            document_registry.update_document(document_id, status="failed", error=detail)
         status_code = 409 if "Embedding dimension mismatch" in detail else 400
         raise HTTPException(status_code=status_code, detail=detail)
     except Exception as exc:
         logger.exception("Ingestion failed for %s", saved["file_name"])
+        if "document_id" in locals():
+            document_registry.update_document(document_id, status="failed", error=str(exc))
         raise HTTPException(status_code=500, detail=f"Ingestion failed: {exc}")
 
 # ── Chat / Query ─────────────────────────────────────────────
-@app.post("/chat/query")
+@app.post("/chat/query", response_model=QueryResponse)
 async def query_document(request: QueryRequest):
-    """Send a question/summary request through the ADK agent tree.
+    """Answer a document question with a reliable grounded pipeline.
 
-    Flow: FastAPI → orchestrator → classify_intents(qa/summary)
-          → retrieval_agent → answering_agent → grounded response
+    The endpoint uses the same ADK tool functions as the agents, but executes
+    retrieval and answer generation directly so the API always returns stable
+    JSON (`answer`, `citations`, `metadata`) to the React client. This avoids UI
+    crashes caused by raw ADK text/tool events while keeping the agent codepath
+    available for ADK runtimes.
     """
     if not request.message or not request.message.strip():
         raise HTTPException(status_code=400, detail="Message cannot be empty.")
 
-    result = await _run_agent(
-        user_id=request.user_id,
-        message=request.message,
+    message = request.message.strip()
+    intent_result = classify_intents(message)
+    intent = "summary" if "summary" in intent_result.get("intents", []) else "qa"
+    document_id = request.document_id or (
+        document_registry.latest_document_id(request.user_id) if request.use_latest else None
+    ) or "all"
+
+    try:
+        retrieved = retrieve_chunks(
+            query=message,
+            user_id=request.user_id,
+            document_id=document_id,
+            intent=intent,
+        )
+        answer_result = generate_answer(
+            question=message,
+            chunks=json.dumps(retrieved.get("chunks", [])),
+            intent=intent,
+        )
+    except ValueError as exc:
+        logger.exception("Query validation failed for user=%s", request.user_id)
+        raise HTTPException(status_code=400, detail=str(exc))
+    except Exception as exc:
+        logger.exception("Query failed for user=%s", request.user_id)
+        raise HTTPException(status_code=500, detail=f"Query failed: {exc}")
+
+    return QueryResponse(
+        answer=answer_result.get("answer", ""),
+        citations=answer_result.get("citations", []),
+        metadata={
+            "status": answer_result.get("status", retrieved.get("status")),
+            "intent": intent,
+            "retrieved_count": retrieved.get("chunk_count", 0),
+            "document_id": None if document_id == "all" else document_id,
+            "retrieval_status": retrieved.get("status"),
+        },
     )
-    return result
 
 
 # ── List documents ───────────────────────────────────────────

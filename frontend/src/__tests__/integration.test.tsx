@@ -141,7 +141,7 @@ describe('AppStore', () => {
       content: 'Test',
       timestamp: new Date(),
     });
-    state.setCitations([{ document_id: 'doc', chunk_id: 'chunk', ... }]);
+    state.setCitations([{ document_id: 'doc', document_name: 'Doc', chunk_id: 'chunk', page_number: 1, slide_number: null, section_title: null, snippet: 'Snippet', score: 0.9 }]);
     
     state.clearMessages();
     
@@ -365,7 +365,10 @@ describe('useUploadDocument Hook', () => {
     const mockResponse = {
       document_id: 'doc_123',
       document_name: 'test.pdf',
+      file_type: 'pdf',
+      status: 'indexed',
       chunk_count: 10,
+      message: 'Indexed',
     };
     
     vi.mocked(documentService.uploadDocument).mockResolvedValue(mockResponse);
@@ -408,7 +411,10 @@ describe('useUploadDocument Hook', () => {
     const mockResponse = {
       document_id: 'doc_123',
       document_name: 'test.pdf',
+      file_type: 'pdf',
+      status: 'indexed',
       chunk_count: 10,
+      message: 'Indexed',
     };
     
     vi.mocked(documentService.uploadDocument).mockResolvedValue(mockResponse);
@@ -618,7 +624,10 @@ describe('Chat Flow Integration', () => {
     const uploadResponse = {
       document_id: 'doc_123',
       document_name: 'test.pdf',
+      file_type: 'pdf',
+      status: 'indexed',
       chunk_count: 10,
+      message: 'Indexed',
     };
     
     const queryResponse = {

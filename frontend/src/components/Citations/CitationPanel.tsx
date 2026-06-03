@@ -3,7 +3,7 @@ import { useAppStore } from '@/stores/appStore';
 import CitationCard from './CitationCard';
 
 export default function CitationPanel() {
-  const citations = useAppStore((s) => s.citations);
+  const citations = useAppStore((s) => s.citations ?? []);
 
   return (
     <aside className="hidden flex-col overflow-hidden border-l border-slate-200/80 bg-slate-50/80 dark:border-slate-800/80 dark:bg-slate-900/50 xl:flex">

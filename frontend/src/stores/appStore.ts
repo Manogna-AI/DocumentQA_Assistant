@@ -90,7 +90,7 @@ export const useAppStore = create<AppState>((set) => ({
       return { messages: msgs };
     }),
 
-  setCitations: (c) => set({ citations: c }),
+  setCitations: (c) => set({ citations: c ?? [] }),
   setIsQuerying: (v) => set({ isQuerying: v }),
   clearMessages: () => set({ messages: [], citations: [] }),
 }));

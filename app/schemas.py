@@ -18,8 +18,10 @@ class Intent(str, Enum):
 class UploadResponse(BaseModel):
     document_id: str
     document_name: str
+    file_type: str
     status: str
     chunk_count: int
+    message: str = ""
 
 
 class QueryRequest(BaseModel):
@@ -54,6 +56,7 @@ class DocumentInfo(BaseModel):
     chunk_count: int
     created_at: str
     updated_at: str
+    error: Optional[str] = None
 
 
 class DocumentListResponse(BaseModel):
