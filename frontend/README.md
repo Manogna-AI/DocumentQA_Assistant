@@ -91,15 +91,11 @@ Open <http://localhost:3000>.
 
 ### Answers are slow
 
-Local Ollama generation can take several minutes depending on the model and hardware. Try a smaller model, ask a narrower question, or reduce retrieval settings in the backend.
+Local Ollama generation can take several minutes depending on the model and hardware. Try a smaller model, ask a narrower question, or reduce retrieval settings in the backend. Alternatively you can switch ollama cloud models for fast generation.
 
 ### Uploaded file is rejected
 
 Supported extensions are `.pdf`, `.docx`, and `.pptx`; the default size limit is 50 MB. Backend limits must also allow the selected file.
-
-### The answer area does not scroll
-
-The production layout uses `h-dvh`, `min-h-0`, and dedicated `overflow-y-auto` containers. If a custom wrapper is added, ensure every flex/grid ancestor of the scroll area can shrink (`min-h-0`) and that only the intended panel owns vertical scrolling.
 
 ## Production Checklist
 

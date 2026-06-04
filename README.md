@@ -58,8 +58,8 @@ classify_intents -> retrieve_chunks -> generate_answer -> citations
 Recommended local models:
 
 ```bash
-ollama pull nomic-embed-text
-ollama pull llama3.1
+ollama pull [nomic-embed-text, all-minilm:latest]
+ollama pull [qwen3:1.7b, llama3.2:3b, gpt-oss:120b-cloud]
 ollama serve
 ```
 
@@ -76,8 +76,8 @@ MAX_FILE_SIZE_MB=50
 
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_EMBED_URL=http://localhost:11434
-OLLAMA_EMBEDDING_MODEL=nomic-embed-text
-OLLAMA_CHAT_MODEL=llama3.1
+OLLAMA_EMBEDDING_MODEL=all-minilm:latest
+OLLAMA_CHAT_MODEL=gpt-oss:120b-cloud
 OLLAMA_REQUEST_TIMEOUT=600
 OLLAMA_EMBED_BATCH_SIZE=10
 
@@ -165,7 +165,7 @@ pip install -r requirements.txt
 
 ### Model does not support ADK tools
 
-Google ADK tool/function calling requires a chat model that supports tool declarations. If `/chat/query` returns a capability error, switch to a tool-capable model such as `llama3.1` and restart the backend.
+Google ADK tool/function calling requires a chat model that supports tool declarations. If `/chat/query` returns a capability error, switch to a tool-capable model such as `llama3.2:3b`or ollama cloud model such as 'gpt-oss:120b-cloud' and restart the backend.
 
 ### Chroma embedding dimension mismatch
 
